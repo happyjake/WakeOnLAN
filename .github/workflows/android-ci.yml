@@ -9,6 +9,11 @@ on:
   pull_request:
     branches: [main, master]
 
+# Add permissions for the entire workflow
+permissions:
+  contents: write
+  packages: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
