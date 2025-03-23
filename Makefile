@@ -18,7 +18,7 @@ GRADLE_WRAPPER_DOWNLOAD_URL := https://github.com/gradle/gradle/raw/v7.5.0/gradl
 # Ensure gradlew is executable
 $(shell chmod +x gradlew)
 
-.PHONY: setup build clean test test-debug lint check install apk help gradle-wrapper note version-bump version-patch version-minor version-major release tag
+.PHONY: setup build clean test test-debug lint check install apk help gradle-wrapper note version-bump version-patch version-minor version-major release tag create-github-release sign-apk
 
 note: ## Note about Android Studio
 	@echo "$(YELLOW)NOTE: This project is designed to be imported into Android Studio.$(NC)"
@@ -157,6 +157,44 @@ release: ## Bump patch version, commit, tag, and push to trigger GitHub release
 	git tag -a "v$$VERSION_NAME" -m "Version $$VERSION_NAME" && \
 	git push && git push --tags && \
 	echo "$(GREEN)Release v$$VERSION_NAME pushed to remote.$(NC)"
+
+# Create a new GitHub release
+create-github-release:
+	# Make sure we have a tag
+	@if [ -z "$$TAG" ]; then \
+		echo "Error: TAG environment variable is required. Use: make create-github-release TAG=v1.0.0"; \
+		exit 1; \
+	fi
+	# Build and sign release
+	$(MAKE) release
+	# Create GitHub release using gh CLI
+	gh release create $$TAG \
+		--title "Release $$TAG" \
+		--notes "Release $$TAG" \
+		app/build/outputs/apk/release/app-release.apk
+
+sign-apk: ## Sign an APK using environment variables
+	@echo "$(BLUE)Signing APK using environment variables...$(NC)"
+	# Check if required environment variables are set
+	@if [ -z "$$SIGNING_KEY" ] || [ -z "$$ALIAS" ] || [ -z "$$KEY_STORE_PASSWORD" ] || [ -z "$$KEY_PASSWORD" ]; then \
+		echo "$(RED)Error: Missing required environment variables.$(NC)"; \
+		echo "Make sure to set: SIGNING_KEY, ALIAS, KEY_STORE_PASSWORD, KEY_PASSWORD"; \
+		exit 1; \
+	fi
+	# Create signing directory
+	@mkdir -p app/signing
+	# Create keystore file from base64 encoded string
+	@echo "$$SIGNING_KEY" | base64 --decode > app/signing/release.keystore
+	# Update local.properties with signing config
+	@echo "signing.keystore=app/signing/release.keystore" > local.properties.signing
+	@echo "signing.alias=$$ALIAS" >> local.properties.signing
+	@echo "signing.storePassword=$$KEY_STORE_PASSWORD" >> local.properties.signing
+	@echo "signing.keyPassword=$$KEY_PASSWORD" >> local.properties.signing
+	@cat local.properties.signing >> local.properties
+	@rm local.properties.signing
+	# Build signed APK
+	@./gradlew assembleRelease
+	@echo "$(GREEN)Signed APK generated at: app/build/outputs/apk/release/app-release.apk$(NC)"
 
 help: ## Show this help
 	@echo "Wake-on-LAN Android App Makefile"

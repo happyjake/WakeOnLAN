@@ -3,6 +3,15 @@ plugins {
     id 'kotlin-android'
 }
 
+// Load properties from local.properties
+def localProperties = new Properties()
+def localPropertiesFile = rootProject.file('local.properties')
+if (localPropertiesFile.exists()) {
+    localPropertiesFile.withReader('UTF-8') { reader ->
+        localProperties.load(reader)
+    }
+}
+
 android {
     compileSdk 33
 
@@ -16,10 +25,31 @@ android {
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    // Define signing configuration based on properties
+    signingConfigs {
+        release {
+            if (localProperties.getProperty('signing.keystore')) {
+                // Fix absolute path resolution
+                def keystorePath = localProperties.getProperty('signing.keystore')
+                if (!new File(keystorePath).isAbsolute()) {
+                    keystorePath = rootProject.file(keystorePath).absolutePath
+                }
+                storeFile file(keystorePath)
+                storePassword localProperties.getProperty('signing.storePassword')
+                keyAlias localProperties.getProperty('signing.alias')
+                keyPassword localProperties.getProperty('signing.keyPassword')
+            }
+        }
+    }
+
     buildTypes {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            // Use signing config if available
+            if (signingConfigs.release.storeFile != null) {
+                signingConfig signingConfigs.release
+            }
         }
     }
     compileOptions {
