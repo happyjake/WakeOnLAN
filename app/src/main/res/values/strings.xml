@@ -8,4 +8,18 @@
     <string name="message_success">Wake-on-LAN packet sent successfully</string>
     <string name="message_error">Failed to send Wake-on-LAN packet</string>
     <string name="error_invalid_mac">Invalid MAC address format</string>
+    
+    <!-- Update related strings -->
+    <string name="update_available_title">Update Available</string>
+    <string name="update_available_message">Version %1$s is available. You are using version %2$s. Would you like to update?</string>
+    <string name="update_button_download">Download</string>
+    <string name="update_button_cancel">Not Now</string>
+    <string name="update_downloading">Downloading update…</string>
+    <string name="update_download_complete">Download complete</string>
+    <string name="update_download_failed">Download failed</string>
+    <string name="update_install_title">Install Update</string>
+    <string name="update_install_message">Would you like to install the update now?</string>
+    <string name="update_button_install">Install</string>
+    <string name="update_button_later">Later</string>
+    <string name="update_check_failed">Could not check for updates</string>
 </resources> 

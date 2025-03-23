@@ -8,6 +8,7 @@ A simple Android application that allows you to send Wake-on-LAN magic packets t
 - Validate MAC address input with multiple formats (00:11:22:33:44:55, 00-11-22-33-44-55, 001122334455)
 - Uses standard WoL port (9)
 - Works on any Android device with API level 21+ (Android 5.0 and above)
+- Automatic update checking from GitHub releases
 
 ## Project Structure
 
@@ -15,7 +16,8 @@ This project was built following test-driven development principles:
 
 1. **Core Functionality (WakeOnLan.kt)** - Handles MAC address validation, magic packet creation, and network operations
 2. **User Interface (MainActivity.kt)** - Simple UI for entering MAC address and broadcast IP
-3. **Unit Tests** - Comprehensive tests for both core functionality and UI interactions
+3. **Update Checker (UpdateChecker.kt)** - Checks for app updates from GitHub releases
+4. **Unit Tests** - Comprehensive tests for both core functionality and UI interactions
 
 ## How to Use
 
@@ -23,11 +25,14 @@ This project was built following test-driven development principles:
 2. Enter the broadcast IP address of your network (typically 192.168.1.255)
 3. Tap the "Wake Device" button to send the magic packet
 
+The app will automatically check for updates when launched and prompt you to download and install new versions when available.
+
 ## Requirements
 
 - The target device must have Wake-on-LAN enabled in its BIOS/firmware settings
 - Your network must allow broadcast packets
 - The device that you want to wake up must be connected to the same network (or accessible via the provided broadcast IP)
+- Internet connection (for update checking)
 
 ## Building and Installation
 
@@ -67,4 +72,15 @@ You can also use the app through Android's shell interface by launching an inten
 
 ```bash
 am start -n com.example.wakeonlan/.MainActivity --es "mac" "00:11:22:33:44:55" --es "ip" "192.168.1.255"
-``` 
+```
+
+## Update System
+
+The app includes an automatic update mechanism that:
+
+1. Checks GitHub releases for newer versions on app startup
+2. Shows a notification dialog when updates are available
+3. Allows downloading and installing the update directly from the app
+4. Handles version comparison to ensure only newer versions are offered
+
+This ensures you always have the latest version with the newest features and bug fixes. 
