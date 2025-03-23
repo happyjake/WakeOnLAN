@@ -1,0 +1,11 @@
+<resources>
+    <string name="app_name">Wake On LAN</string>
+    <string name="label_mac_address">MAC Address</string>
+    <string name="label_broadcast_ip">Broadcast IP</string>
+    <string name="button_wake">Wake Device</string>
+    <string name="hint_mac_address">e.g., 00:11:22:33:44:55</string>
+    <string name="hint_broadcast_ip">e.g., 192.168.1.255</string>
+    <string name="message_success">Wake-on-LAN packet sent successfully</string>
+    <string name="message_error">Failed to send Wake-on-LAN packet</string>
+    <string name="error_invalid_mac">Invalid MAC address format</string>
+</resources> 
