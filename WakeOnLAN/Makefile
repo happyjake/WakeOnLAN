@@ -18,7 +18,7 @@ GRADLE_WRAPPER_DOWNLOAD_URL := https://github.com/gradle/gradle/raw/v7.5.0/gradl
 # Ensure gradlew is executable
 $(shell chmod +x gradlew)
 
-.PHONY: setup build clean test test-debug lint check install apk help gradle-wrapper note
+.PHONY: setup build clean test test-debug lint check install apk help gradle-wrapper note version-bump version-patch version-minor version-major release tag
 
 note: ## Note about Android Studio
 	@echo "$(YELLOW)NOTE: This project is designed to be imported into Android Studio.$(NC)"
@@ -89,6 +89,74 @@ uninstall: ## Uninstall app from connected device
 	@echo "$(BLUE)Uninstalling app from connected device...$(NC)"
 	@adb uninstall com.example.wakeonlan
 	@echo "$(GREEN)Uninstall complete.$(NC)"
+
+# Version bumping commands
+version-bump: ## Display current version
+	@echo "$(BLUE)Current version:$(NC)"
+	@grep -E "versionCode|versionName" app/build.gradle | sed 's/^[ \t]*//'
+
+version-patch: ## Bump patch version (e.g., 1.0.0 -> 1.0.1)
+	@echo "$(BLUE)Bumping patch version...$(NC)"
+	@# Extract current version
+	@VERSION_CODE=$$(grep -E "versionCode" app/build.gradle | grep -o "[0-9]*") && \
+	VERSION_NAME=$$(grep -E "versionName" app/build.gradle | grep -o "\"[^\"]*\"" | tr -d \") && \
+	MAJOR=$$(echo $$VERSION_NAME | cut -d. -f1) && \
+	MINOR=$$(echo $$VERSION_NAME | cut -d. -f2) && \
+	PATCH=$$(echo $$VERSION_NAME | cut -d. -f3) && \
+	NEW_PATCH=$$((PATCH + 1)) && \
+	NEW_VERSION="$$MAJOR.$$MINOR.$$NEW_PATCH" && \
+	NEW_VERSION_CODE=$$((VERSION_CODE + 1)) && \
+	sed -i.bak "s/versionCode [0-9]*/versionCode $$NEW_VERSION_CODE/" app/build.gradle && \
+	sed -i.bak "s/versionName \"[^\"]*\"/versionName \"$$NEW_VERSION\"/" app/build.gradle && \
+	rm -f app/build.gradle.bak && \
+	echo "$(GREEN)Version bumped to $$NEW_VERSION ($$NEW_VERSION_CODE)$(NC)"
+
+version-minor: ## Bump minor version (e.g., 1.0.0 -> 1.1.0)
+	@echo "$(BLUE)Bumping minor version...$(NC)"
+	@# Extract current version
+	@VERSION_CODE=$$(grep -E "versionCode" app/build.gradle | grep -o "[0-9]*") && \
+	VERSION_NAME=$$(grep -E "versionName" app/build.gradle | grep -o "\"[^\"]*\"" | tr -d \") && \
+	MAJOR=$$(echo $$VERSION_NAME | cut -d. -f1) && \
+	MINOR=$$(echo $$VERSION_NAME | cut -d. -f2) && \
+	NEW_MINOR=$$((MINOR + 1)) && \
+	NEW_VERSION="$$MAJOR.$$NEW_MINOR.0" && \
+	NEW_VERSION_CODE=$$((VERSION_CODE + 1)) && \
+	sed -i.bak "s/versionCode [0-9]*/versionCode $$NEW_VERSION_CODE/" app/build.gradle && \
+	sed -i.bak "s/versionName \"[^\"]*\"/versionName \"$$NEW_VERSION\"/" app/build.gradle && \
+	rm -f app/build.gradle.bak && \
+	echo "$(GREEN)Version bumped to $$NEW_VERSION ($$NEW_VERSION_CODE)$(NC)"
+
+version-major: ## Bump major version (e.g., 1.0.0 -> 2.0.0)
+	@echo "$(BLUE)Bumping major version...$(NC)"
+	@# Extract current version
+	@VERSION_CODE=$$(grep -E "versionCode" app/build.gradle | grep -o "[0-9]*") && \
+	VERSION_NAME=$$(grep -E "versionName" app/build.gradle | grep -o "\"[^\"]*\"" | tr -d \") && \
+	MAJOR=$$(echo $$VERSION_NAME | cut -d. -f1) && \
+	NEW_MAJOR=$$((MAJOR + 1)) && \
+	NEW_VERSION="$$NEW_MAJOR.0.0" && \
+	NEW_VERSION_CODE=$$((VERSION_CODE + 1)) && \
+	sed -i.bak "s/versionCode [0-9]*/versionCode $$NEW_VERSION_CODE/" app/build.gradle && \
+	sed -i.bak "s/versionName \"[^\"]*\"/versionName \"$$NEW_VERSION\"/" app/build.gradle && \
+	rm -f app/build.gradle.bak && \
+	echo "$(GREEN)Version bumped to $$NEW_VERSION ($$NEW_VERSION_CODE)$(NC)"
+
+tag: ## Create git tag with current version
+	@echo "$(BLUE)Creating git tag...$(NC)"
+	@VERSION_NAME=$$(grep -E "versionName" app/build.gradle | grep -o "\"[^\"]*\"" | tr -d \") && \
+	git add app/build.gradle && \
+	git commit -m "Bump version to $$VERSION_NAME" && \
+	git tag -a "v$$VERSION_NAME" -m "Version $$VERSION_NAME" && \
+	echo "$(GREEN)Tag v$$VERSION_NAME created.$(NC)"
+
+release: ## Bump patch version, commit, tag, and push to trigger GitHub release
+	@echo "$(BLUE)Preparing new release...$(NC)"
+	@make version-patch
+	@VERSION_NAME=$$(grep -E "versionName" app/build.gradle | grep -o "\"[^\"]*\"" | tr -d \") && \
+	git add app/build.gradle && \
+	git commit -m "Release version $$VERSION_NAME" && \
+	git tag -a "v$$VERSION_NAME" -m "Version $$VERSION_NAME" && \
+	git push && git push --tags && \
+	echo "$(GREEN)Release v$$VERSION_NAME pushed to remote.$(NC)"
 
 help: ## Show this help
 	@echo "Wake-on-LAN Android App Makefile"
