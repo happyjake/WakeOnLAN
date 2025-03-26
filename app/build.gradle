@@ -3,6 +3,8 @@ plugins {
     id 'kotlin-android'
 }
 
+import java.time.Duration
+
 // Load properties from local.properties
 def localProperties = new Properties()
 def localPropertiesFile = rootProject.file('local.properties')
@@ -14,6 +16,7 @@ if (localPropertiesFile.exists()) {
 
 android {
     compileSdk 33
+    namespace "com.example.wakeonlan"
 
     defaultConfig {
         applicationId "com.example.wakeonlan"
@@ -53,11 +56,11 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_8
-        targetCompatibility JavaVersion.VERSION_1_8
+        sourceCompatibility JavaVersion.VERSION_11
+        targetCompatibility JavaVersion.VERSION_11
     }
     kotlinOptions {
-        jvmTarget = '1.8'
+        jvmTarget = '11'
     }
     buildFeatures {
         viewBinding true
@@ -66,6 +69,14 @@ android {
     testOptions {
         unitTests {
             includeAndroidResources = true
+            all {
+                // Set a timeout for each test using the proper Duration format
+                timeout = Duration.ofSeconds(180)
+                testLogging {
+                    events "passed", "skipped", "failed"
+                    showStandardStreams = true
+                }
+            }
         }
     }
 }
@@ -89,9 +100,9 @@ dependencies {
     testImplementation 'androidx.test:rules:1.5.0'
     testImplementation 'androidx.test.ext:junit:1.1.5'
     
-    // MockK for more powerful mocking
-    testImplementation 'io.mockk:mockk:1.13.4'
-    testImplementation 'io.mockk:mockk-android:1.13.4'
+    // MockK for more powerful mocking - update to latest stable version
+    testImplementation 'io.mockk:mockk:1.13.8'
+    testImplementation 'io.mockk:mockk-android:1.13.8'
     
     androidTestImplementation 'androidx.test.ext:junit:1.1.5'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'

@@ -14,9 +14,11 @@ import kotlinx.coroutines.withContext
 import org.json.JSONArray
 import java.io.File
 import java.net.HttpURLConnection
-import java.net.URL
 
-class UpdateChecker(private val context: Context) {
+class UpdateChecker(
+    private val context: Context,
+    private val networkService: NetworkService = DefaultNetworkService()
+) {
     private val TAG = "UpdateChecker"
     private val GITHUB_API_URL = "https://api.github.com/repos/happyjake/WakeOnLAN/releases"
     
@@ -30,16 +32,10 @@ class UpdateChecker(private val context: Context) {
             val currentVersion = getCurrentVersion()
             
             // Fetch the latest release from GitHub
-            val connection = URL(GITHUB_API_URL).openConnection() as HttpURLConnection
-            connection.requestMethod = "GET"
-            connection.setRequestProperty("Accept", "application/vnd.github.v3+json")
-            connection.connectTimeout = 5000
-            connection.readTimeout = 5000
+            val response = networkService.get(GITHUB_API_URL)
             
-            val responseCode = connection.responseCode
-            if (responseCode == HttpURLConnection.HTTP_OK) {
-                val response = connection.inputStream.bufferedReader().use { it.readText() }
-                val releases = JSONArray(response)
+            if (response.isSuccessful && response.body != null) {
+                val releases = JSONArray(response.body)
                 
                 // Find the latest release
                 if (releases.length() > 0) {
@@ -70,7 +66,7 @@ class UpdateChecker(private val context: Context) {
                     }
                 }
             } else {
-                Log.e(TAG, "Error checking for updates: HTTP ${connection.responseCode}")
+                Log.e(TAG, "Error checking for updates: HTTP ${response.code}")
             }
             
             return@withContext null
@@ -110,9 +106,6 @@ class UpdateChecker(private val context: Context) {
                     when (status) {
                         DownloadManager.STATUS_SUCCESSFUL -> {
                             downloading = false
-                            val localUriIndex = cursor.getColumnIndex(DownloadManager.COLUMN_LOCAL_URI)
-                            val localUriString = cursor.getString(localUriIndex)
-                            val localUri = Uri.parse(localUriString)
                             
                             // Convert content:// URI to file
                             apkFile = File(context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS), fileName)
@@ -172,8 +165,14 @@ class UpdateChecker(private val context: Context) {
      */
     private fun getCurrentVersion(): String {
         return try {
-            val packageInfo = context.packageManager.getPackageInfo(context.packageName, 0)
-            packageInfo.versionName
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                val packageInfo = context.packageManager.getPackageInfo(context.packageName, PackageManager.PackageInfoFlags.of(0))
+                packageInfo.versionName
+            } else {
+                @Suppress("DEPRECATION")
+                val packageInfo = context.packageManager.getPackageInfo(context.packageName, 0)
+                packageInfo.versionName
+            }
         } catch (e: PackageManager.NameNotFoundException) {
             Log.e(TAG, "Error getting app version", e)
             "0.0.0"
